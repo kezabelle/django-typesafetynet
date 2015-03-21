@@ -59,3 +59,13 @@ Given a complete clone::
 
     python setup.py test
 
+Or, for a full test::
+
+    tox
+
+
+Test status
+^^^^^^^^^^^
+
+.. image:: https://travis-ci.org/kezabelle/django-typesafetynet.svg
+  :target: https://travis-ci.org/kezabelle/django-typesafetynet
