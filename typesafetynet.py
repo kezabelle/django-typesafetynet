@@ -1,6 +1,7 @@
 from copy import copy
 import logging
 from django.http import HttpRequest, Http404
+from django.utils.six import iteritems
 import wrapt
 import inspect
 
@@ -8,6 +9,7 @@ import inspect
 logger = logging.getLogger(__name__)
 
 
+# noinspection PyPep8
 class SafetyNet404(Http404): pass
 
 
@@ -48,6 +50,14 @@ def safetynet(klass):
             request = args_to_check.pop('request')
 
         form = klass(data=args_to_check)
+
+        # make the necessary fields required
+        for fieldname in form.fields:
+            if fieldname in args_to_check:
+                form.fields[fieldname].required = True
+            else:
+                form.fields[fieldname].required = False
+
         is_valid = form.is_valid()
         if not is_valid:
             msg = ("Unable to validate {kws!r} using {form!r}, errors "
@@ -56,7 +66,11 @@ def safetynet(klass):
             logger.error(msg, extra={'request': request, 'status_code': 404})
             raise SafetyNet404(msg)
         checked_args = copy(args_to_check)
-        checked_args.update(**form.cleaned_data)
+        # only supply back the keys we can expect the function to take
+        # and only those which have a value
+        cleaned_form_data = {k:v for k, v in iteritems(form.cleaned_data)
+                             if k in checked_args and v is not None}
+        checked_args.update(**cleaned_form_data)
         if request is not None:
             checked_args.update(request=request)
         return function(**checked_args)

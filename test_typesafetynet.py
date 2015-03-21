@@ -7,7 +7,7 @@ import pytest
 from uuid import uuid4, UUID
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.forms import Form, ModelChoiceField, CharField
+from django.forms import Form, ModelChoiceField, CharField, IntegerField
 from django.http import HttpRequest
 from django.test import RequestFactory
 from django.utils.encoding import force_text
@@ -103,3 +103,32 @@ def test_example_func_raises_404_using_args_and_kwargs():
     # TypeError: view() got multiple values for keyword argument 'request'
     with pytest.raises(SafetyNet404):
         assert ExampleCBV.as_view()(request, obj='invalid user', uuid='a-a-a-a') == 'woo cbv!'
+
+
+
+class ExampleOptionalForm(Form):
+    id = IntegerField()
+    id2 = IntegerField()
+
+
+@safetynet(ExampleOptionalForm)
+def example_optional_func(request, id):
+    return id
+
+
+@safetynet(ExampleOptionalForm)
+def example_optional_func_both(request, id, id2):
+    return id + id2
+
+
+@safetynet(ExampleOptionalForm)
+def example_optional_func_with_extra(request, id, id2, unvalidated_option):
+    # only id and id2 are validated
+    return unvalidated_option.format(id + id2)
+
+
+def test_optional_form():
+    request = RequestFactory().get('/')
+    assert example_optional_func(request, '12') == 12
+    assert example_optional_func_both(request, '12', '10') == 22
+    assert example_optional_func_with_extra(request, '12', '10', 'got {}') == 'got 22'
