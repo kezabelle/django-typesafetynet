@@ -127,8 +127,22 @@ def example_optional_func_with_extra(request, id, id2, unvalidated_option):
     return unvalidated_option.format(id + id2)
 
 
+@safetynet(ExampleOptionalForm)
+def example_optional_func_with_defaultarg(request, id, id2=None):
+    return (id, id2)
+
+@safetynet(ExampleOptionalForm)
+def example_optional_func_with_starkwargs(request, id, id2=None, *aaarghs, **captain_kws):
+    # turns out we'll not ever get aaarghs ... hmmm
+    return [id, id2, aaarghs, captain_kws]
+
+
 def test_optional_form():
     request = RequestFactory().get('/')
     assert example_optional_func(request, '12') == 12
     assert example_optional_func_both(request, '12', '10') == 22
     assert example_optional_func_with_extra(request, '12', '10', 'got {}') == 'got 22'
+    assert example_optional_func_with_defaultarg(request, '12') == (12, None)
+    assert example_optional_func_with_starkwargs(request, '12', -1, 'clippity', 'clip', clop='clop') == [
+        12, -1, (), {'clop': 'clop'}
+    ]

@@ -27,6 +27,9 @@ def safetynet(klass):
     def wrapper(function, instance, args, kwargs):
         argspec = inspect.getargspec(func=function)
         needed_args = argspec.args
+        # if argspec.defaults is not None:
+        #     unneeded_needed_args = len(argspec.defaults)
+        #     needed_args = needed_args[0:-unneeded_needed_args]
         unnamed_args = list(args)
 
         # special case instancemethods
