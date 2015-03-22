@@ -51,6 +51,7 @@ setup(
     install_requires=(
         'Django>=1.4',
         'wrapt>=1.10.4',
+        'funcsigs>=0.4',
     ),
     tests_require=(
         'pytest>=2.6.4',

@@ -63,17 +63,15 @@ def test_example_func_ok_using_args():
 def test_example_func_ok_using_kwargs():
     request = RequestFactory().get('/')
     user = __makeuser('test')
-    assert example_func(request, obj=user.pk, uuid=force_text(uuid4())) == 'woo'
-    assert ExampleCBV.as_view()(request, obj=user.pk, uuid=force_text(uuid4())) == 'woo cbv!'
+    assert example_func(request=request, obj=user.pk, uuid=force_text(uuid4())) == 'woo'
+    assert ExampleCBV.as_view()(request=request, obj=user.pk, uuid=force_text(uuid4())) == 'woo cbv!'
 
 
 @pytest.mark.django_db
 def test_example_func_ok_using_args_and_kwargs():
     request = RequestFactory().get('/')
     user = __makeuser('test')
-    assert example_func(user.pk, request=request, uuid=force_text(uuid4())) == 'woo'
-    # for some reason I'm not bothered by right now, doing request=request yields
-    # TypeError: view() got multiple values for keyword argument 'request'
+    assert example_func(request, user.pk, uuid=force_text(uuid4())) == 'woo'
     assert ExampleCBV.as_view()(request, user.pk, uuid=force_text(uuid4())) == 'woo cbv!'
 
 
@@ -90,17 +88,15 @@ def test_example_func_raises_404_using_invalid_args():
 def test_example_func_raises_404_using_invalid_kwargs():
     request = RequestFactory().get('/')
     with pytest.raises(SafetyNet404):
-        example_func(request, obj='blorp', uuid=force_text(uuid4()))
+        example_func(request=request, obj='blorp', uuid=force_text(uuid4()))
     with pytest.raises(SafetyNet404):
-        assert ExampleCBV.as_view()(request, obj='blorp', uuid=force_text(uuid4())) == 'woo cbv!'
+        assert ExampleCBV.as_view()(request=request, obj='blorp', uuid=force_text(uuid4())) == 'woo cbv!'
 
 @pytest.mark.django_db
 def test_example_func_raises_404_using_args_and_kwargs():
     request = RequestFactory().get('/')
     with pytest.raises(SafetyNet404) as exc:
-        example_func('invalid user', request=request, uuid='a-a-a-a')
-    # for some reason I'm not bothered by right now, doing request=request yields
-    # TypeError: view() got multiple values for keyword argument 'request'
+        example_func(request, 'invalid user', uuid='a-a-a-a')
     with pytest.raises(SafetyNet404):
         assert ExampleCBV.as_view()(request, obj='invalid user', uuid='a-a-a-a') == 'woo cbv!'
 
@@ -129,6 +125,7 @@ def example_optional_func_with_extra(request, id, id2, unvalidated_option):
 
 @safetynet(ExampleOptionalForm)
 def example_optional_func_with_defaultarg(request, id, id2=None):
+    # should keep id2 as None
     return (id, id2)
 
 @safetynet(ExampleOptionalForm)
@@ -143,6 +140,7 @@ def test_optional_form():
     assert example_optional_func_both(request, '12', '10') == 22
     assert example_optional_func_with_extra(request, '12', '10', 'got {}') == 'got 22'
     assert example_optional_func_with_defaultarg(request, '12') == (12, None)
+    assert example_optional_func_with_defaultarg(request, '12', '5') == (12, 5)
     assert example_optional_func_with_starkwargs(request, '12', -1, 'clippity', 'clip', clop='clop') == [
-        12, -1, (), {'clop': 'clop'}
+        12, -1, ('clippity', 'clip'), {'clop': 'clop'}
     ]

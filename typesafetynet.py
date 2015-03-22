@@ -1,13 +1,19 @@
-from copy import copy
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
 import logging
-from django.http import HttpRequest, Http404
+from django.http import Http404
 from django.utils.six import iteritems
 import wrapt
-import inspect
+try:
+    from inspect import signature
+except ImportError:
+    from funcsigs import signature
 
 
 logger = logging.getLogger(__name__)
-
 
 # noinspection PyPep8
 class SafetyNet404(Http404): pass
@@ -25,56 +31,30 @@ def safetynet(klass):
     """
     @wrapt.decorator
     def wrapper(function, instance, args, kwargs):
-        argspec = inspect.getargspec(func=function)
-        needed_args = argspec.args
-        # if argspec.defaults is not None:
-        #     unneeded_needed_args = len(argspec.defaults)
-        #     needed_args = needed_args[0:-unneeded_needed_args]
-        unnamed_args = list(args)
+        callsig = signature(function)
+        bound_signature = callsig.bind(*args, **kwargs)
+        callargs = bound_signature.arguments
 
-        # special case instancemethods
-        if instance is not None and 'self' in needed_args:
-            needed_args.remove('self')
-
-        # special case the request argument
-        request = None
-        if 'request' in needed_args:
-            needed_args.remove('request')
-            for index, arg in enumerate(unnamed_args):
-                if isinstance(arg, HttpRequest):
-                    request = arg
-                    unnamed_args.remove(arg)
-
-        args_to_check = {k: v for k, v in zip(needed_args, unnamed_args)}
-        args_to_check.update(**kwargs)
-
-        # request was passed in as a kwarg ... still remove it.
-        if 'request' in args_to_check:
-            request = args_to_check.pop('request')
-
-        form = klass(data=args_to_check)
-
+        form = klass(data=callargs)
         # make the necessary fields required
         for fieldname in form.fields:
-            if fieldname in args_to_check:
-                form.fields[fieldname].required = True
+            if fieldname in callargs:
+                # only mark it as required if it's not None ...
+                form.fields[fieldname].required = callargs[fieldname] is not None
             else:
                 form.fields[fieldname].required = False
 
         is_valid = form.is_valid()
         if not is_valid:
             msg = ("Unable to validate {kws!r} using {form!r}, errors "
-                   "were: {errors!r}".format(kws=args_to_check, form=klass,
+                   "were: {errors!r}".format(kws=callargs, form=klass,
                                              errors=form.errors))
-            logger.error(msg, extra={'request': request, 'status_code': 404})
+            logger.error(msg, extra={'status_code': 404})
             raise SafetyNet404(msg)
-        checked_args = copy(args_to_check)
         # only supply back the keys we can expect the function to take
         # and only those which have a value
         cleaned_form_data = {k:v for k, v in iteritems(form.cleaned_data)
-                             if k in checked_args and v is not None}
-        checked_args.update(**cleaned_form_data)
-        if request is not None:
-            checked_args.update(request=request)
-        return function(**checked_args)
+                             if k in callargs and v is not None}
+        callargs.update(**cleaned_form_data)
+        return function(*bound_signature.args, **bound_signature.kwargs)
     return wrapper
