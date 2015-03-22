@@ -4,6 +4,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import division
 import logging
+from django.core.exceptions import ValidationError
+from django.forms import Field
 from django.http import Http404
 from django.utils.six import iteritems
 import wrapt
@@ -20,6 +22,13 @@ def get_version(): return version  # noqa
 
 
 logger = logging.getLogger(__name__)
+
+
+__all__ = [
+    'safetynet',
+    'SafetyNet404',
+    'FormField',
+]
 
 # noinspection PyPep8
 class SafetyNet404(Http404): pass
@@ -64,3 +73,20 @@ def safetynet(klass):
         callargs.update(**cleaned_form_data)
         return function(*bound_signature.args, **bound_signature.kwargs)
     return wrapper
+
+
+
+class FormField(Field):
+    def __init__(self, form_class, *args, **kwargs):
+        super(FormField, self).__init__(*args, **kwargs)
+        self.form_class = form_class
+
+    def clean(self, value):
+        value = super(FormField, self).clean(value=value)
+        form = self.form_class(data=value)
+        if form.is_bound:
+            if form.is_valid():
+                return form.cleaned_data
+            else:
+                raise ValidationError(message=[e for e in form.errors])
+        return value
