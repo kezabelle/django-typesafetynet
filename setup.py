@@ -43,7 +43,7 @@ LONG_DESCRIPTION = "\r\n\r\n----\r\n\r\n".join(make_readme(HERE))
 
 setup(
     name='django-typesafetynet',
-    version='0.1.0',
+    version='0.1.1',
     py_modules=(
         'typesafetynet',
     ),
