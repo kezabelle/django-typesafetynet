@@ -1,5 +1,5 @@
-django-typesafetynet
-====================
+django-typesafetynet 0.1.0
+==========================
 
 A decorator for validating arguments and casting them to the correct
 type, using `Django`_ `Forms`_.

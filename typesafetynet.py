@@ -13,6 +13,12 @@ except ImportError:
     from funcsigs import signature
 
 
+__version_info__ = '0.1.0'
+__version__ = '0.1.0'
+version = '0.1.0'
+def get_version(): return version  # noqa
+
+
 logger = logging.getLogger(__name__)
 
 # noinspection PyPep8
