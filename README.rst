@@ -1,4 +1,4 @@
-django-typesafetynet 0.1.1
+django-typesafetynet 0.1.2
 ==========================
 
 A decorator for validating arguments and casting them to the correct
