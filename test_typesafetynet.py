@@ -181,3 +181,15 @@ def test_optional_form_which_is_really_complex():
     assert example_optional_func_with_starkwargs(
         request, '12', -1, 'clippity', 'clip', clop='clop',
         futurama={'clamps': 'clamp'}) == hopeful
+
+
+@safetynet(ExampleOptionalForm)
+def example_optional_func2_son_of_example_optional_func(request, id):
+    return example_optional_func(request=request, id=id)
+
+
+def test_nesting():
+    request = RequestFactory().get('/')
+    assert example_optional_func2_son_of_example_optional_func(request, '100') == 100
+    with pytest.raises(SafetyNet404):
+        example_optional_func2_son_of_example_optional_func(request=request, id='test')

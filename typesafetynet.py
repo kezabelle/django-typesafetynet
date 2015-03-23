@@ -61,8 +61,8 @@ def safetynet(klass):
 
         is_valid = form.is_valid()
         if not is_valid:
-            msg = ("Unable to validate {kws!r} using {form!r}, errors "
-                   "were: {errors!r}".format(kws=callargs, form=klass,
+            msg = ("Unable to validate {function!r} using {form!r}, errors "
+                   "were: {errors!r}".format(function=function, form=klass,
                                              errors=form.errors))
             logger.error(msg, extra={'status_code': 404})
             raise SafetyNet404(msg)
