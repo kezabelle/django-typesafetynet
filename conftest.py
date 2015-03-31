@@ -22,10 +22,10 @@ def pytest_configure():
             MIDDLEWARE_CLASSES=(),
             # allegedly this might work ... http://stackoverflow.com/a/25267435
             # and https://gist.github.com/nealtodd/2869341f38f5b1eeb86d
-            MIGRATION_MODULES={
-                'auth': 'test_auth.migrations',
-                'contenttypes': 'test_contenttypes.migrations',
-            }
+            # MIGRATION_MODULES={
+            #     'auth': 'test_auth.migrations',
+            #     'contenttypes': 'test_contenttypes.migrations',
+            # }
         )
     if hasattr(django, 'setup'):
         django.setup()
