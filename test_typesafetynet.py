@@ -57,6 +57,12 @@ def test_example_func_ok_using_args():
     request = RequestFactory().get('/')
     user = __makeuser('test')
     assert example_func(request, user.pk, force_text(uuid4())) == 'woo'
+
+
+@pytest.mark.django_db
+def test_example_cbv_ok_using_args():
+    request = RequestFactory().get('/')
+    user = __makeuser('test')
     assert ExampleCBV.as_view()(request, user.pk, force_text(uuid4())) == 'woo cbv!'
 
 
@@ -65,6 +71,12 @@ def test_example_func_ok_using_kwargs():
     request = RequestFactory().get('/')
     user = __makeuser('test')
     assert example_func(request=request, obj=user.pk, uuid=force_text(uuid4())) == 'woo'
+
+
+@pytest.mark.django_db
+def test_example_cbv_ok_using_kwargs():
+    request = RequestFactory().get('/')
+    user = __makeuser('test')
     assert ExampleCBV.as_view()(request=request, obj=user.pk, uuid=force_text(uuid4())) == 'woo cbv!'
 
 
@@ -73,6 +85,12 @@ def test_example_func_ok_using_args_and_kwargs():
     request = RequestFactory().get('/')
     user = __makeuser('test')
     assert example_func(request, user.pk, uuid=force_text(uuid4())) == 'woo'
+
+
+@pytest.mark.django_db
+def test_example_cbv_ok_using_args_and_kwargs():
+    request = RequestFactory().get('/')
+    user = __makeuser('test')
     assert ExampleCBV.as_view()(request, user.pk, uuid=force_text(uuid4())) == 'woo cbv!'
 
 
@@ -81,6 +99,11 @@ def test_example_func_raises_404_using_invalid_args():
     request = RequestFactory().get('/')
     with pytest.raises(SafetyNet404):
         example_func(request, 'a', force_text(uuid4()))
+
+
+@pytest.mark.django_db
+def test_example_cbv_raises_404_using_invalid_args():
+    request = RequestFactory().get('/')
     with pytest.raises(SafetyNet404):
         assert ExampleCBV.as_view()(request, 'a', force_text(uuid4())) == 'woo cbv!'
 
@@ -90,14 +113,25 @@ def test_example_func_raises_404_using_invalid_kwargs():
     request = RequestFactory().get('/')
     with pytest.raises(SafetyNet404):
         example_func(request=request, obj='blorp', uuid=force_text(uuid4()))
+
+
+@pytest.mark.django_db
+def test_example_cbv_raises_404_using_invalid_kwargs():
+    request = RequestFactory().get('/')
     with pytest.raises(SafetyNet404):
         assert ExampleCBV.as_view()(request=request, obj='blorp', uuid=force_text(uuid4())) == 'woo cbv!'
+
 
 @pytest.mark.django_db
 def test_example_func_raises_404_using_args_and_kwargs():
     request = RequestFactory().get('/')
     with pytest.raises(SafetyNet404) as exc:
         example_func(request, 'invalid user', uuid='a-a-a-a')
+
+
+@pytest.mark.django_db
+def test_example_cbv_raises_404_using_args_and_kwargs():
+    request = RequestFactory().get('/')
     with pytest.raises(SafetyNet404):
         assert ExampleCBV.as_view()(request, obj='invalid user', uuid='a-a-a-a') == 'woo cbv!'
 
@@ -154,12 +188,28 @@ def example_optional_func_with_starkwargs(request, id, id2=None, *aaarghs, **cap
     return [id, id2, aaarghs, captain_kws]
 
 
-def test_optional_form():
+def test_optional_form_1_posarg():
     request = RequestFactory().get('/')
     assert example_optional_func(request, '12') == 12
+
+
+def test_optional_form_2_posargs():
+    request = RequestFactory().get('/')
     assert example_optional_func_both(request, '12', '10') == 22
+
+
+def test_optional_form_3_posargs_with_unvalidated_option():
+    request = RequestFactory().get('/')
     assert example_optional_func_with_extra(request, '12', '10', 'got {}') == 'got 22'
+
+
+def test_optional_form_1_posarg_with_default_value():
+    request = RequestFactory().get('/')
     assert example_optional_func_with_defaultarg(request, '12') == (12, None)
+
+
+def test_optional_form_2_posargs_with_default_value_not_used():
+    request = RequestFactory().get('/')
     assert example_optional_func_with_defaultarg(request, '12', '5') == (12, 5)
 
 
