@@ -94,42 +94,36 @@ def test_example_cbv_ok_using_args_and_kwargs():
     assert ExampleCBV.as_view()(request, user.pk, uuid=force_text(uuid4())) == 'woo cbv!'
 
 
-@pytest.mark.django_db
 def test_example_func_raises_404_using_invalid_args():
     request = RequestFactory().get('/')
     with pytest.raises(SafetyNet404):
         example_func(request, 'a', force_text(uuid4()))
 
 
-@pytest.mark.django_db
 def test_example_cbv_raises_404_using_invalid_args():
     request = RequestFactory().get('/')
     with pytest.raises(SafetyNet404):
         assert ExampleCBV.as_view()(request, 'a', force_text(uuid4())) == 'woo cbv!'
 
 
-@pytest.mark.django_db
 def test_example_func_raises_404_using_invalid_kwargs():
     request = RequestFactory().get('/')
     with pytest.raises(SafetyNet404):
         example_func(request=request, obj='blorp', uuid=force_text(uuid4()))
 
 
-@pytest.mark.django_db
 def test_example_cbv_raises_404_using_invalid_kwargs():
     request = RequestFactory().get('/')
     with pytest.raises(SafetyNet404):
         assert ExampleCBV.as_view()(request=request, obj='blorp', uuid=force_text(uuid4())) == 'woo cbv!'
 
 
-@pytest.mark.django_db
 def test_example_func_raises_404_using_args_and_kwargs():
     request = RequestFactory().get('/')
     with pytest.raises(SafetyNet404) as exc:
         example_func(request, 'invalid user', uuid='a-a-a-a')
 
 
-@pytest.mark.django_db
 def test_example_cbv_raises_404_using_args_and_kwargs():
     request = RequestFactory().get('/')
     with pytest.raises(SafetyNet404):
