@@ -41,6 +41,20 @@ def make_readme(root_path):
 LONG_DESCRIPTION = "\r\n\r\n----\r\n\r\n".join(make_readme(HERE))
 
 
+try:
+    from inspect import signature
+    INSTALL_REQUIRES = (
+        'Django>=1.4',
+        'wrapt>=1.10.4',
+    )
+except ImportError:  # Need to add additional dependency
+    INSTALL_REQUIRES = (
+        'Django>=1.4',
+        'wrapt>=1.10.4',
+        'funcsigs>=0.4',
+    )
+
+
 setup(
     name='django-typesafetynet',
     version='0.1.2',
@@ -48,11 +62,7 @@ setup(
         'typesafetynet',
     ),
     packages=(),
-    install_requires=(
-        'Django>=1.4',
-        'wrapt>=1.10.4',
-        'funcsigs>=0.4',
-    ),
+    install_requires=INSTALL_REQUIRES,
     tests_require=(
         'pytest>=2.6.4',
         'pytest-cov>=1.8.1',
