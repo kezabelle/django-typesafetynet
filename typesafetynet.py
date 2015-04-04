@@ -15,9 +15,9 @@ except ImportError:
     from funcsigs import signature
 
 
-__version_info__ = '0.1.2'
-__version__ = '0.1.2'
-version = '0.1.2'
+__version_info__ = '0.1.3'
+__version__ = '0.1.3'
+version = '0.1.3'
 def get_version(): return version  # noqa
 
 

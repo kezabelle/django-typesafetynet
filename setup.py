@@ -57,7 +57,7 @@ except ImportError:  # Need to add additional dependency
 
 setup(
     name='django-typesafetynet',
-    version='0.1.2',
+    version='0.1.3',
     py_modules=(
         'typesafetynet',
     ),
