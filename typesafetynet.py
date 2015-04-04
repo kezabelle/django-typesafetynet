@@ -34,7 +34,7 @@ __all__ = [
 class SafetyNet404(Http404): pass
 
 
-def safetynet(klass):
+def safetynet(klass, exception_class=SafetyNet404):
     """
     Pass a Django form, and get typecast data in your functions.
 
@@ -65,7 +65,7 @@ def safetynet(klass):
                    "were: {errors!r}".format(function=function, form=klass,
                                              errors=form.errors))
             logger.error(msg, extra={'status_code': 404})
-            raise SafetyNet404(msg)
+            raise exception_class(msg)
         # only supply back the keys we can expect the function to take
         # and only those which have a value
         cleaned_form_data = {k:v for k, v in iteritems(form.cleaned_data)

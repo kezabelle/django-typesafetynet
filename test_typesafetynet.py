@@ -7,7 +7,7 @@ from __future__ import division
 import pytest
 from uuid import uuid4, UUID
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, PermissionDenied
 from django.forms import Form, ModelChoiceField, CharField, IntegerField
 from django.http import HttpRequest
 from django.test import RequestFactory
@@ -237,3 +237,17 @@ def test_nesting():
     assert example_optional_func2_son_of_example_optional_func(request, '100') == 100
     with pytest.raises(SafetyNet404):
         example_optional_func2_son_of_example_optional_func(request=request, id='test')
+
+
+@safetynet(klass=ExampleFuncForm, exception_class=PermissionDenied)
+def example_func_with_custom_exception(request, obj, uuid):
+    assert isinstance(request, HttpRequest)
+    assert isinstance(uuid, UUID)
+    assert isinstance(obj, get_user_model())
+    return 'woo'
+
+
+def test_custom_exception_on_invalid_form():
+    request = RequestFactory().get('/')
+    with pytest.raises(PermissionDenied):
+        example_func_with_custom_exception(request, 'a', force_text(uuid4()))
