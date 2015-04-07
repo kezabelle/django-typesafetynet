@@ -4,15 +4,25 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import division
 # noinspection PyUnresolvedReferences
+from decimal import Decimal
 import pytest
+import tempfile
 from uuid import uuid4, UUID
+import datetime
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError, PermissionDenied
-from django.forms import Form, ModelChoiceField, CharField, IntegerField
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.forms import (Form, ModelChoiceField, CharField, IntegerField, 
+    DateField, TimeField, DateTimeField, RegexField, EmailField, FileField, 
+    URLField, BooleanField, NullBooleanField, ChoiceField, 
+    MultipleChoiceField, FloatField, DecimalField, SplitDateTimeField, 
+    IPAddressField, GenericIPAddressField, FilePathField, SlugField, 
+    TypedChoiceField, TypedMultipleChoiceField, ModelMultipleChoiceField)
 from django.http import HttpRequest
 from django.test import RequestFactory
-from django.utils.encoding import force_text
+from django.utils.encoding import force_text, force_bytes
 from django.views.generic import View
+import os
 from typesafetynet import safetynet, SafetyNet404, FormField
 
 
@@ -251,3 +261,106 @@ def test_custom_exception_on_invalid_form():
     request = RequestFactory().get('/')
     with pytest.raises(PermissionDenied):
         example_func_with_custom_exception(request, 'a', force_text(uuid4()))
+
+
+class AllFieldTypesForm(Form):
+    char = CharField()
+    int = IntegerField()
+    date = DateField()
+    time = TimeField()
+    datetime_ = DateTimeField()
+    regex = RegexField(regex='^[a-f]{3}$')
+    email = EmailField()
+    file = FileField()
+    # image = ImageField()
+    url = URLField()
+    bool = BooleanField()
+    nullbool = NullBooleanField()
+    choice = ChoiceField(choices=(
+        ('test choice', 'yay test choice'),
+    ))
+    multichoice = MultipleChoiceField(choices=(
+        ('test choice', 'yay test choice'),
+        ('test choice 2', 'yay another choice'),
+        ('test choice 3', 'yay test choice'),
+    ))
+    float = FloatField()
+    decimal = DecimalField()
+    split_datetime = SplitDateTimeField()
+    ip = IPAddressField()
+    generic_ip = GenericIPAddressField()
+    filepath = FilePathField(path=tempfile.gettempdir(),
+                             allow_files=True, allow_folders=True)
+    slug = SlugField()
+    typed_choice = TypedChoiceField(choices=(
+        (1, 'test'),
+        (2, 'test 2'),
+        (3, 'bah'),
+    ))
+    typed_multichoice = TypedMultipleChoiceField(choices=(
+        (1, 'test'),
+        (2, 'test 2'),
+        (3, 'bah'),
+    ))
+    model_choice = ModelChoiceField(queryset=get_user_model().objects.all())
+    model_multichoice = ModelMultipleChoiceField(queryset=get_user_model().objects.all())
+
+
+
+@safetynet(klass=AllFieldTypesForm, exception_class=ValueError)
+def all_the_fields(char, int, date, time, datetime_, regex, email, file,
+                   url, bool, nullbool, choice, multichoice, float, decimal,
+                   split_datetime_0, split_datetime_1, ip, generic_ip, filepath,
+                   slug, typed_choice, typed_multichoice, model_choice, 
+                   model_multichoice):
+    assert force_text(char) == 'test'
+    assert int == 4
+    assert date == datetime.date(2012, 12, 12)
+    assert time == datetime.time(14, 30, 59)
+    assert datetime_ == datetime.datetime(2012, 12, 12, 14, 30, 59)
+    assert regex == 'abc'
+    assert email == 'x@y.zzz'
+    assert isinstance(file, SimpleUploadedFile)
+    assert url == 'https://bbc.co.uk/'
+    assert bool is True
+    # assert nullbool is None
+    assert choice == 'test choice'
+    assert multichoice == ['test choice', 'test choice 2']
+    assert float == 1.222
+    assert decimal == Decimal('4.001')
+    # split widgets are crap ... ugh.
+    assert split_datetime_0 == '12/12/2012'
+    assert split_datetime_1 == '14:30:59'
+    assert ip == '127.0.0.1'
+    assert generic_ip == '255.255.255.255'
+    assert filepath.startswith(tempfile.gettempdir())
+    assert slug == 'yorp'
+    # TODO: these should be typed, non?
+    assert typed_choice == '1'
+    assert typed_multichoice == ['3', '2']
+    assert isinstance(model_choice, get_user_model())
+    assert len(model_multichoice) == 1
+    assert isinstance(model_multichoice[0], get_user_model())
+
+
+@pytest.mark.django_db
+def test_all_the_fields_string_values_ok():
+    users = [__makeuser('test{}'.format(x)) for x in range(1, 3)]
+    user1_id = force_text(users[0].pk)
+    user2_id = force_text(users[1].pk)
+    tmp = tempfile.gettempdir()
+    txtfile = SimpleUploadedFile(name='test', content=force_bytes('whee'),
+                                 content_type='text/plain')
+    files_in_tmp = os.listdir(tmp)
+    filepath = os.path.join(tmp, files_in_tmp[0])
+    all_the_fields(char='test', int='4', date='12/12/2012', time='14:30:59',
+                   datetime_='12/12/2012 14:30:59', regex='abc', email='x@y.zzz',
+                   file=txtfile, url='https://bbc.co.uk',
+                   bool='1', nullbool='', choice='test choice',
+                   multichoice=['test choice', 'test choice 2'], float='1.222',
+                   decimal='4.001', split_datetime_0='12/12/2012',
+                   split_datetime_1='14:30:59',
+                   ip='127.0.0.1',
+                   generic_ip='255.255.255.255', filepath=filepath,
+                   slug='yorp', typed_choice='1', typed_multichoice=['3', '2'],
+                   model_choice=user1_id, model_multichoice=[user2_id])

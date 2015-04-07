@@ -50,7 +50,7 @@ def safetynet(klass, exception_class=SafetyNet404):
         bound_signature = callsig.bind(*args, **kwargs)
         callargs = bound_signature.arguments
 
-        form = klass(data=callargs)
+        form = klass(data=callargs, files=callargs, empty_permitted=False)
         # make the necessary fields required
         for fieldname in form.fields:
             if fieldname in callargs:
