@@ -265,7 +265,7 @@ def test_custom_exception_on_invalid_form():
 
 class AllFieldTypesForm(Form):
     char = CharField()
-    int = IntegerField()
+    int_ = IntegerField()
     date = DateField()
     time = TimeField()
     datetime_ = DateTimeField()
@@ -286,7 +286,6 @@ class AllFieldTypesForm(Form):
     ))
     float = FloatField()
     decimal = DecimalField()
-    split_datetime = SplitDateTimeField()
     ip = IPAddressField()
     generic_ip = GenericIPAddressField()
     filepath = FilePathField(path=tempfile.gettempdir(),
@@ -296,25 +295,25 @@ class AllFieldTypesForm(Form):
         (1, 'test'),
         (2, 'test 2'),
         (3, 'bah'),
-    ))
+    ), coerce=int)
     typed_multichoice = TypedMultipleChoiceField(choices=(
         (1, 'test'),
         (2, 'test 2'),
         (3, 'bah'),
-    ))
+    ), coerce=int)
     model_choice = ModelChoiceField(queryset=get_user_model().objects.all())
     model_multichoice = ModelMultipleChoiceField(queryset=get_user_model().objects.all())
 
 
 
 @safetynet(klass=AllFieldTypesForm, exception_class=ValueError)
-def all_the_fields(char, int, date, time, datetime_, regex, email, file,
+def all_the_fields(char, int_, date, time, datetime_, regex, email, file,
                    url, bool, nullbool, choice, multichoice, float, decimal,
-                   split_datetime_0, split_datetime_1, ip, generic_ip, filepath,
+                   ip, generic_ip, filepath,
                    slug, typed_choice, typed_multichoice, model_choice, 
                    model_multichoice):
     assert force_text(char) == 'test'
-    assert int == 4
+    assert int_ == 4
     assert date == datetime.date(2012, 12, 12)
     assert time == datetime.time(14, 30, 59)
     assert datetime_ == datetime.datetime(2012, 12, 12, 14, 30, 59)
@@ -323,21 +322,17 @@ def all_the_fields(char, int, date, time, datetime_, regex, email, file,
     assert isinstance(file, SimpleUploadedFile)
     assert url == 'https://bbc.co.uk/'
     assert bool is True
-    # assert nullbool is None
+    assert nullbool is None
     assert choice == 'test choice'
     assert multichoice == ['test choice', 'test choice 2']
     assert float == 1.222
     assert decimal == Decimal('4.001')
-    # split widgets are crap ... ugh.
-    assert split_datetime_0 == '12/12/2012'
-    assert split_datetime_1 == '14:30:59'
     assert ip == '127.0.0.1'
     assert generic_ip == '255.255.255.255'
     assert filepath.startswith(tempfile.gettempdir())
     assert slug == 'yorp'
-    # TODO: these should be typed, non?
-    assert typed_choice == '1'
-    assert typed_multichoice == ['3', '2']
+    assert typed_choice == 1
+    assert typed_multichoice == [3, 2]
     assert isinstance(model_choice, get_user_model())
     assert len(model_multichoice) == 1
     assert isinstance(model_multichoice[0], get_user_model())
@@ -345,6 +340,10 @@ def all_the_fields(char, int, date, time, datetime_, regex, email, file,
 
 @pytest.mark.django_db
 def test_all_the_fields_string_values_ok():
+    """
+    Note: MultiValueFields aren't supported, because the way they work
+    doesn't really mesh well.
+    """
     users = [__makeuser('test{}'.format(x)) for x in range(1, 3)]
     user1_id = force_text(users[0].pk)
     user2_id = force_text(users[1].pk)
@@ -353,14 +352,12 @@ def test_all_the_fields_string_values_ok():
                                  content_type='text/plain')
     files_in_tmp = os.listdir(tmp)
     filepath = os.path.join(tmp, files_in_tmp[0])
-    all_the_fields(char='test', int='4', date='12/12/2012', time='14:30:59',
+    all_the_fields(char='test', int_='4', date='12/12/2012', time='14:30:59',
                    datetime_='12/12/2012 14:30:59', regex='abc', email='x@y.zzz',
                    file=txtfile, url='https://bbc.co.uk',
                    bool='1', nullbool='', choice='test choice',
                    multichoice=['test choice', 'test choice 2'], float='1.222',
-                   decimal='4.001', split_datetime_0='12/12/2012',
-                   split_datetime_1='14:30:59',
-                   ip='127.0.0.1',
+                   decimal='4.001', ip='127.0.0.1',
                    generic_ip='255.255.255.255', filepath=filepath,
                    slug='yorp', typed_choice='1', typed_multichoice=['3', '2'],
                    model_choice=user1_id, model_multichoice=[user2_id])

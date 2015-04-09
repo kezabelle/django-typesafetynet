@@ -51,11 +51,15 @@ def safetynet(klass, exception_class=SafetyNet404):
         callargs = bound_signature.arguments
 
         form = klass(data=callargs, files=callargs, empty_permitted=False)
+        form.__required_arguments__ = []
         # make the necessary fields required
         for fieldname in form.fields:
             if fieldname in callargs:
                 # only mark it as required if it's not None ...
-                form.fields[fieldname].required = callargs[fieldname] is not None
+                can_be_required = callargs[fieldname] is not None
+                form.fields[fieldname].required = can_be_required
+                if can_be_required:
+                    form.__required_arguments__.append(fieldname)
             else:
                 form.fields[fieldname].required = False
 
@@ -69,7 +73,7 @@ def safetynet(klass, exception_class=SafetyNet404):
         # only supply back the keys we can expect the function to take
         # and only those which have a value
         cleaned_form_data = {k:v for k, v in iteritems(form.cleaned_data)
-                             if k in callargs and v is not None}
+                             if k in callargs}
         callargs.update(**cleaned_form_data)
         return function(*bound_signature.args, **bound_signature.kwargs)
     return wrapper
